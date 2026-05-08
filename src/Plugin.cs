@@ -2,15 +2,14 @@
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
-using REPOLib.Modules;
-using System;
+using QueenOfTheLosers.Modifiers;
 using UnityEngine;
 
 namespace QueenOfTheLosers;
 
-[BepInPlugin("QueenOfTheLosers", "Queen Of The Losers", "1.0.0")]
 [BepInDependency(REPOLib.MyPluginInfo.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("nickklmao-REPOConfig-1.2.3", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInPlugin("QueenOfTheLosers", "Queen Of The Losers", "1.1.0")]
 public class QueenOfTheLosers : BaseUnityPlugin
 {
     internal static QueenOfTheLosers Instance { get; private set; } = null!;
@@ -20,72 +19,35 @@ public class QueenOfTheLosers : BaseUnityPlugin
 #pragma warning restore IDE1006 // Naming Styles
     internal Harmony? Harmony { get; set; }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    internal NetworkedEvent SyncTitle;
-    internal ConfigEntry<string> TitleConfig;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    internal ConfigEntry<string>? TitleConfig;
+    internal ConfigEntry<float>? DeathHeadPitchConfig;
+    internal ConfigEntry<float>? DeathHeadInflectionConfig;
+    internal ConfigEntry<float>? TTSPitchConfig;
 
-    public const string DefaultTitle = "RULER";
-
-    private void Awake()
+    internal void Awake()
     {
         Instance = this;
+        PlayerSettingSyncer.Init();
 
         // Prevent the plugin from being deleted
-        this.gameObject.transform.parent = null;
-        this.gameObject.hideFlags = HideFlags.HideAndDontSave;
+        transform.parent = null;
+        gameObject.hideFlags = HideFlags.HideAndDontSave;
 
         Patch();
 
-        TitleConfig = Config.Bind("General", "Title Selection", DefaultTitle, new ConfigDescription("A replacement for the title of KING", new AcceptableValueList<string>("QUEEN", "RULER", "KING", "MONARCH")));
-        TitleConfig.SettingChanged += (_, _) =>
-        {
-            PlayerTitleHandler.LocalTitle = TitleConfig.Value;
-        };
-        PlayerTitleHandler.LocalTitle = TitleConfig.Value;
+        TitleConfig = Config.Bind("Title", "Title Selection", "RULER", new ConfigDescription("A replacement for the title of KING in the \"King of the Losers\" screen", new AcceptableValueList<string>("QUEEN", "RULER", "KING", "MONARCH")));
+        TitleChange.Init(TitleConfig);
 
-        SyncTitle = new("SyncPreferredPlayerTitle", (e) =>
-        {
-            if(!(e.CustomData is string text && TryParseMessage(text, out var message)))
-            {
-                Logger.LogWarning("Recieved malformed player title sync message, ignoring");
-                return;
-            }
+        DeathHeadPitchConfig = Config.Bind("Death Head Voice", "Pitch", 1f, new ConfigDescription("A modifier for the pitch of your voice while you're possesing your head, Vanilla is 1.0. Note: extreme values can make your voice unintelligible", new AcceptableValueRange<float>(0.8f, 1.8f)));
+        DeathHeadInflectionConfig = Config.Bind("Death Head Voice", "Low Battery Inflection", 0.5f, new ConfigDescription("Changes the inflection that is applied when you're running out of battery, Vanilla is 0.5. Note: extreme values can make your voice even more unintelligible", new AcceptableValueRange<float>(0.4f, 1.8f)));
+        DeathHeadVoice.Init(DeathHeadPitchConfig, DeathHeadInflectionConfig);
 
-            PlayerTitleHandler.SetTitle(message.playerID, message.title);
-            //Logger.LogInfo($"Setting Title for {message.playerID} to \"{message.title}\"");
-        });
-
-        Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
+        TTSPitchConfig = Config.Bind("TTS", "Pitch", 0f, new ConfigDescription("A modifier for the pitch of your TTS voice, Vanilla is 0", new AcceptableValueRange<float>(-0.5f, 1f)));
+        TTSVoicePitch.Init(TTSPitchConfig);
     }
-    public static bool TryParseMessage(string message, out (string playerID, string title) value)
+    internal void Update()
     {
-        value = default;
-
-        int index = message.IndexOf(':');
-
-        if(index == -1) return false;
-
-        // no need to allocate actual backing strings until we've validated the input
-        ReadOnlySpan<char> playerID = message.AsSpan()[..index].Trim();
-        ReadOnlySpan<char> title = message.AsSpan()[(index + 1)..].Trim();
-
-        // if the client sends an empty or large title or playerID, ignore it, it's malformed, and either a bug or malicious behavior.
-        if(playerID.Length == 0 || title.Length == 0) return false;
-        if(playerID.Length > 64 || title.Length > 32) return false;
-
-        // make sure there are no crazy characters
-        for(int i = 0; i < title.Length; i++)
-        {
-            char c = title[i];
-            if(!char.IsLetterOrDigit(c) && c != ' ' && c != '-' && c != '_')
-            {
-                return false;
-            }
-        }
-
-        value = (new(playerID), new(title));
-        return true;
+        PlayerSettingSyncer.SendIfDirty();
     }
     internal void Patch()
     {

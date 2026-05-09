@@ -17,6 +17,6 @@ Use the [REPOConfig](https://thunderstore.io/c/repo/p/nickklmao/REPOConfig/) mod
 - If you and the host have the mod, everyone else with the mod will also see the effects of your changes.
 - If anyone else does not have the mod, they will not see your changes.
 
-unfortunately it appears all voice effects are done on the recieving clients, which is why I could not make the voice effects client side only.
+Unfortunately it appears all voice effects are done on the recieving clients, which is why I could not make the voice effects client side only.
 
 Currently (due to limitations in the config api) I have to define each title that can be used. If you want more to be added, let me know via a github issue and I can add them in a future update.

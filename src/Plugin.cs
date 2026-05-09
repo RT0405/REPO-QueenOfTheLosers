@@ -9,7 +9,7 @@ namespace QueenOfTheLosers;
 
 [BepInDependency(REPOLib.MyPluginInfo.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("nickklmao-REPOConfig-1.2.3", BepInDependency.DependencyFlags.SoftDependency)]
-[BepInPlugin("QueenOfTheLosers", "Queen Of The Losers", "1.1.0")]
+[BepInPlugin("QueenOfTheLosers", "Queen Of The Losers", "1.1.1")]
 public class QueenOfTheLosers : BaseUnityPlugin
 {
     internal static QueenOfTheLosers Instance { get; private set; } = null!;

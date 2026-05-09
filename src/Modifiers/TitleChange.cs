@@ -37,7 +37,7 @@ public class TitleChange : NetworkedPlayerSetting<string>
     public static string ReplaceText = "KING";
     public static string? ReplaceTitle(string? text, string title)
     {
-        return text?.Replace(ReplaceText, title, System.StringComparison.InvariantCultureIgnoreCase);
+        return text?.Replace(ReplaceText, title, System.StringComparison.OrdinalIgnoreCase);
     }
 
     [HarmonyPatch]

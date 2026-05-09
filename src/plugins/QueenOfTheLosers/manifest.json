@@ -1,9 +1,9 @@
 {
     "name": "QueenOfTheLosers",
-    "version_number": "1.1.0",
+    "version_number": "1.1.1",
     "website_url": "https://github.com/RT0405/REPO-QueenOfTheLosers",
     "description": "Allows Configuration of the \"King of the Losers\" screen to show other titles, such as Queen / Ruler. As well as dead voice & TTS pitch options.",
     "dependencies": [
-        "Zehs-REPOLib-4.0.0"
+        "Zehs-REPOLib-4.0.1"
     ]
 }
